@@ -1,3 +1,4 @@
+import tkinter as tk
 from classes.estoque import Estoque
 from dao.estoque_dao import EstoqueDAO
 from classes.pessoa import Pessoa
@@ -15,9 +16,51 @@ def lista_estoque(metodo):
     cabecalho = ["ID", "Nome", "Preco", "Quantidade", "Categoria"]
 
     print(tabulate(dados, headers=cabecalho, tablefmt="grid"))
-    
 
-lista_pessoa(PessoaDAO.lista_tudo())
+# Janela
+root = tk.Tk()
+root.title("Loja Virtual - Distribuidora Bebidas S.A")
+root.geometry("500x250")
+
+frame = tk.Frame()
+
+
+# Titulo loja
+title = tk.Label(root, text = "Bem-vindo à Loja Virtual", font=("Arial", 30))
+title.pack()
+
+
+separator = tk.Frame(root, height=2, bd=0, bg="gray")
+separator.pack(fill='x', padx=20, pady=10)
+
+login_label = tk.Label(frame, text="Login de Usuário", font=("Arial", 16))
+login_label.grid(row=0, column=0, columnspan=2, sticky="news", pady=10)
+
+user_label = tk.Label(frame, text="E-mail", font=("Arial", 12))
+user_label.grid(row=1, column=0)
+
+user_entry_label = tk.Entry(frame, width=20)
+user_entry_label.grid(row=1, column=1, pady=10)
+
+password_label = tk.Label(frame, text="Senha", font=("Arian", 12))
+password_label.grid(row=2, column=0)
+
+password_entry_label = tk.Entry(frame, show='*', width=20)
+password_entry_label.grid(row=2, column=1)
+
+login_button = tk.Button(frame, text='Entrar', font=('Arial', 10))
+login_button.grid(row=3, column=0, pady=10)
+
+sign_up_button = tk.Button(frame, text='Registrar', font=('Arial', 10))
+sign_up_button.grid(row=3, column=1, columnspan=2)
+
+frame.pack()
+
+
+root.mainloop()
+
+
+'''lista_pessoa(PessoaDAO.lista_tudo())
 
 x = input()
 
@@ -50,7 +93,7 @@ x = input()
 
 '''
 
-ESTOQUE
+# ESTOQUE
 
 '''
 
@@ -87,3 +130,4 @@ lista_estoque(EstoqueDAO.lista_tudo())
 #EXIBE UM
 print('\n\nListando o produto de id 9:')
 lista_estoque(EstoqueDAO.lista_um(9))
+'''''''''
