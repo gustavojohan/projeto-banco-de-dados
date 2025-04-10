@@ -8,8 +8,8 @@ class PessoaDAO:
         conn = Database.conectar()
         cursor = conn.cursor()
 
-        sql = "INSERT INTO pessoas (nome, cpf_cnpj, endereco, telefone, email) VALUES (%s, %s, %s, %s, %s)"
-        valores = (pessoa.nome, pessoa.cpf_cnpj, pessoa.endereco, pessoa.telefone, pessoa.email)
+        sql = "INSERT INTO pessoas (nome, cpf_cnpj, endereco, telefone, email, senha, tipo) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        valores = (pessoa.nome, pessoa.cpf_cnpj, pessoa.endereco, pessoa.telefone, pessoa.email, pessoa.senha, pessoa.tipo)
 
         cursor.execute(sql, valores)
         conn.commit()
@@ -26,7 +26,7 @@ class PessoaDAO:
         conn = Database.conectar()
         cursor = conn.cursor()
 
-        campos_disponiveis = ["nome", "cpf_cnpj", "endereco", "telefone", "email"]
+        campos_disponiveis = ["nome", "cpf_cnpj", "endereco", "telefone", "email", "senha", "tipo"]
         
         campos_para_atualizar = []
         valores = []
@@ -90,7 +90,8 @@ class PessoaDAO:
         cursor.execute("SELECT * FROM pessoas")
         registros = cursor.fetchall() # retorna todas as linhas do resultado
 
-        array_pessoas = [Pessoa(id=linha[0], nome=linha[1], cpf_cnpj=linha[2], endereco=linha[3], telefone=linha[4], email=linha[5]) for linha in registros]
+        array_pessoas = [Pessoa(id=linha[0], nome=linha[1], cpf_cnpj=linha[2], endereco=linha[3], telefone=linha[4],
+                                 email=linha[5], senha=[6], tipo=[7])for linha in registros]
 
         cursor.close()
         conn.close()
@@ -108,7 +109,8 @@ class PessoaDAO:
         registros = cursor.fetchone() # retorna uma linha
 
         if registros:
-            pessoa = [Pessoa(id=registros[0], nome=registros[1], cpf_cnpj=registros[2], endereco=registros[3], telefone=registros[4], email=registros[5])]
+            pessoa = [Pessoa(id=registros[0], nome=registros[1], cpf_cnpj=registros[2], endereco=registros[3], telefone=registros[4],
+                              email=registros[5], senha=registros[6], tipo=registros[7])]
         else:
             pessoa = None
 

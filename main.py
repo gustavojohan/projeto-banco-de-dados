@@ -1,9 +1,11 @@
-import tkinter as tk
 from classes.estoque import Estoque
 from dao.estoque_dao import EstoqueDAO
 from classes.pessoa import Pessoa
 from dao.pessoa_dao import PessoaDAO
+from interface import AppLoja
+import tkinter as tk
 from tabulate import tabulate
+
 
 def lista_pessoa(metodo):
     dados = [(p.id, p.nome, p.cpf_cnpj, p.endereco, p.telefone, p.email) for p in metodo]
@@ -17,47 +19,14 @@ def lista_estoque(metodo):
 
     print(tabulate(dados, headers=cabecalho, tablefmt="grid"))
 
-# Janela
-root = tk.Tk()
-root.title("Loja Virtual - Distribuidora Bebidas S.A")
-root.geometry("500x250")
 
-frame = tk.Frame()
+def main():
+    root = tk.Tk()
+    app = AppLoja(root)
+    root.mainloop()
 
-
-# Titulo loja
-title = tk.Label(root, text = "Bem-vindo à Loja Virtual", font=("Arial", 30))
-title.pack()
-
-
-separator = tk.Frame(root, height=2, bd=0, bg="gray")
-separator.pack(fill='x', padx=20, pady=10)
-
-login_label = tk.Label(frame, text="Login de Usuário", font=("Arial", 16))
-login_label.grid(row=0, column=0, columnspan=2, sticky="news", pady=10)
-
-user_label = tk.Label(frame, text="E-mail", font=("Arial", 12))
-user_label.grid(row=1, column=0)
-
-user_entry_label = tk.Entry(frame, width=20)
-user_entry_label.grid(row=1, column=1, pady=10)
-
-password_label = tk.Label(frame, text="Senha", font=("Arian", 12))
-password_label.grid(row=2, column=0)
-
-password_entry_label = tk.Entry(frame, show='*', width=20)
-password_entry_label.grid(row=2, column=1)
-
-login_button = tk.Button(frame, text='Entrar', font=('Arial', 10))
-login_button.grid(row=3, column=0, pady=10)
-
-sign_up_button = tk.Button(frame, text='Registrar', font=('Arial', 10))
-sign_up_button.grid(row=3, column=1, columnspan=2)
-
-frame.pack()
-
-
-root.mainloop()
+if __name__ == "__main__":
+    main()
 
 
 '''lista_pessoa(PessoaDAO.lista_tudo())
