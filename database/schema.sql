@@ -21,3 +21,7 @@ CREATE TABLE IF NOT EXISTS pessoas (
     senha VARCHAR(20),
     tipo ENUM('cliente', 'funcionario', 'admin') NOT NULL
 );
+
+CREATE OR REPLACE VIEW vw_produtos_disponiveis AS
+SELECT id, nome, preco, quantidade, categoria
+FROM estoque;

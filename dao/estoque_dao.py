@@ -56,7 +56,7 @@ class EstoqueDAO:
         conn = Database.conectar()
         cursor = conn.cursor()
 
-        sql = "SELECT * FROM estoque WHERE categoria = %s"
+        sql = "SELECT * FROM vw_produtos_disponiveis WHERE categoria = %s"
         cursor.execute(sql, (categoria,))
 
         registros = cursor.fetchall()
@@ -87,7 +87,7 @@ class EstoqueDAO:
         conn  = Database.conectar()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM estoque")
+        cursor.execute("SELECT * FROM vw_produtos_disponiveis")
         registros = cursor.fetchall() # retorna todas as linhas do resultado
 
         array_estoque = [Estoque(id=linha[0], nome=linha[1], preco=linha[2], quantidade=linha[3], categoria=linha[4]) for linha in registros]

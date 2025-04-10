@@ -57,7 +57,7 @@ class AppLoja:
                 messagebox.showinfo("Login", f"Bem-vindo funcionário {pessoa.nome}!")
             else:
                 messagebox.showinfo("Login", f"Bem-vindo, {pessoa.nome}!")
-                JanelaCliente(root)
+                JanelaCliente(self.master)
         else:
             messagebox.showerror("Erro de Login", "E-mail ou senha incorretos, ou usuário não registrado.") 
 

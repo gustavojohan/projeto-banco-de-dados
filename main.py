@@ -3,6 +3,7 @@ from dao.estoque_dao import EstoqueDAO
 from classes.pessoa import Pessoa
 from dao.pessoa_dao import PessoaDAO
 from interface import AppLoja
+from interface import JanelaCliente
 import tkinter as tk
 from tabulate import tabulate
 
