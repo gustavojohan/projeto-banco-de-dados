@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS pessoas (
     nome VARCHAR(100) NOT NULL,
     cpf_cnpj VARCHAR(18) UNIQUE,
     endereco VARCHAR(100),
-    telefone VARCHAR(20),
+    telefone VARCHAR(11),
     email VARCHAR(100) UNIQUE,
     senha VARCHAR(20),
     tipo ENUM('cliente', 'funcionario', 'admin') NOT NULL

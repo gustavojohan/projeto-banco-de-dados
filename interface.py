@@ -1,4 +1,7 @@
 import tkinter as tk
+from tkinter import messagebox
+from dao.pessoa_dao import PessoaDAO
+from classes.pessoa import Pessoa
 
 class AppLoja:
     def __init__(self, master):
@@ -42,10 +45,53 @@ class AppLoja:
     def login(self):
         email = self.user_entry.get()
         senha = self.password_entry.get()
-        print(f"Login com: {email} - {senha}")
+
+        pessoa = PessoaDAO.verifica_email_senha(email, senha)
+
+        if pessoa:
+            if pessoa.tipo == "admin":
+                messagebox.showinfo("Login", f"Bem-vindo administrador {pessoa.nome}!")
+            elif pessoa.tipo == "funcionario":
+                messagebox.showinfo("Login", f"Bem-vindo funcionario {pessoa.nome}!")
+            else:
+                messagebox.showinfo("Login", f"Bem-vindo, {pessoa.nome}!")
+        else:
+            messagebox.showerror("Erro de Login", "E-mail ou senha incorretos, ou usuário não registrado.") 
 
     def registrar(self):
-        print("Abrir tela de registro...")
+        janela_registro = tk.Toplevel(self.master)
+        janela_registro.title("Registro de cliente")
+        janela_registro.geometry("400x300")
+
+        labels =  ["Nome", "CPF/CNPJ", "Endereço", "Telefone", "E-mail", "Senha"]
+        entries = {}
+
+        for i, label in enumerate(labels):
+            tk.Label(janela_registro, text=label).grid(row=i, column=0, sticky="e", pady=5)
+            entry = tk.Entry(janela_registro, width=30, show='*' if label == "Senha" else '')
+            entry.grid(row=i, column=1, pady=5)
+            entries[label] = entry
+
+        def confirma_registro():
+            pessoa = Pessoa(
+                nome=entries["Nome"].get(),
+                cpf_cnpj=entries["CPF/CNPJ"].get(),
+                endereco=entries["Endereço"].get(),
+                telefone=entries["Telefone"].get(),
+                email=entries["E-mail"].get(),
+                senha=entries["Senha"].get(),
+                tipo="cliente"
+        )
+            
+            try:
+                PessoaDAO.criar(pessoa)
+                messagebox.showinfo("Sucesso", "Cliente registrado com sucesso!")
+                janela_registro.destroy()
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao registrar: {str(e)}")
+
+        btn = tk.Button(janela_registro, text="Confirmar Registro", command=confirma_registro)
+        btn.grid(row=len(labels), column=0, columnspan=2, pady=10)
 
 if __name__ == "__main__":
     root = tk.Tk()

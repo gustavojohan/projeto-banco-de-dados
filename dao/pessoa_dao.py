@@ -119,5 +119,22 @@ class PessoaDAO:
 
         return pessoa
     
+    @staticmethod
+    def verifica_email_senha(email, senha):
+        conn = Database.conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        sql = "SELECT * FROM pessoas WHERE email = %s AND senha = %s"
+        cursor.execute(sql, (email, senha))
+        resultado = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if resultado:
+            return Pessoa(**resultado)
+        else:
+            return None
+    
     
     
