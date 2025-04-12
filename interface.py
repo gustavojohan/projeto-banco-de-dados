@@ -58,7 +58,7 @@ class AppLoja:
                 messagebox.showinfo("Login", f"Bem-vindo funcionário {pessoa.nome}!")
             else:
                 messagebox.showinfo("Login", f"Bem-vindo, {pessoa.nome}!")
-                JanelaCliente(self.master, cliente=pessoa)
+                JanelaMenuCliente(self.master, cliente=pessoa)
         else:
             messagebox.showerror("Erro de Login", "E-mail ou senha incorretos, ou usuário não registrado.") 
 
@@ -96,6 +96,49 @@ class AppLoja:
 
         btn = tk.Button(janela_registro, text="Confirmar Registro", command=confirma_registro)
         btn.grid(row=len(labels), column=0, columnspan=2, pady=10)
+
+class JanelaMenuCliente(tk.Toplevel):
+    def __init__(self, master=None, cliente=None):
+        super().__init__(master)
+        self.title("Menu do Cliente")
+        self.geometry("400x300")
+        self.cliente = cliente
+
+        tk.Label(self, text=f"Olá, {cliente.nome}!", font=("Arial", 16)).pack(pady=20)
+
+        btn_comprar = tk.Button(self, text="Fazer Compras", width=25, command=self.ir_para_compras)
+        btn_comprar.pack(pady=10)
+
+        btn_historico = tk.Button(self, text="Histórico de Compras", width=25, command=self.mostrar_historico)
+        btn_historico.pack(pady=10)
+
+        btn_dados = tk.Button(self, text="Exibir Dados Pessoais", width=25, command=self.exibir_dados)
+        btn_dados.pack(pady=10)
+
+    def ir_para_compras(self):
+        self.destroy()
+        JanelaCliente(self.master, cliente=self.cliente)
+
+    def mostrar_historico(self):
+        historico = PedidoDAO.historico_compras(self.cliente.id)
+        if not historico:
+            messagebox.showinfo("Histórico", "Nenhuma compra encontrada.")
+            return
+        historico_str = "\n\n".join(
+            f"ID: {h[0]}, Valor: R$ {h[1]:.2f}, Status: {h[2]}, Data: {h[3]}"
+            for h in historico
+        )
+        messagebox.showinfo("Histórico de Compras", historico_str)
+
+    def exibir_dados(self):
+        dados = (
+            f"Nome: {self.cliente.nome}\n"
+            f"CPF/CNPJ: {self.cliente.cpf_cnpj}\n"
+            f"Endereço: {self.cliente.endereco}\n"
+            f"Telefone: {self.cliente.telefone}\n"
+            f"E-mail: {self.cliente.email}"
+        )
+        messagebox.showinfo("Seus Dados", dados)
 
 class JanelaCliente(tk.Toplevel):
     def __init__(self, master=None, cliente=None):
@@ -206,19 +249,40 @@ class JanelaCliente(tk.Toplevel):
         if not forma_pagamento:
             messagebox.showerror("Erro", "Escolha uma forma de pagamento.")
             return
+        
+        desconto_porcentagem = 0.0
             
-        if time == "Flamengo":
-            self.valor_total *= 1.05
-        elif time == "Fluminense":
-            self.valor_total *= 0.90
+        if time == "flamengo":
+            desconto_porcentagem = -0.05
+            messagebox.showinfo("Atenção", "Por torcer para o Flamengo, houve um acréscimo de 5% no valor total da sua compra.")
+        elif time == "fluminense":
+            desconto_porcentagem = 0.10
+            messagebox.showinfo("Desconto Aplicado", "Parabéns! Por torcer para o Fluminense, você recebeu um desconto de 10% na sua compra.")
+
+        self.valor_total *= (1 - desconto_porcentagem)
 
         id_pagamento = PedidoDAO.get_id_pagamento(forma_pagamento)
 
         id_venda = PedidoDAO.criar_venda(self.cliente.id, id_pagamento, self.valor_total)
 
         for produto, qtd, preco in self.carrinho:
-            PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco)
+            desconto_unitario = preco * desconto_porcentagem
+            preco_unitario_com_desconto = preco - desconto_unitario
+            PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco, desconto_unitario)
             EstoqueDAO.atualizar_quantidade(produto.id, produto.quantidade - qtd)
+
+        messagebox.showinfo(
+            "Compra Realizada",
+            "Sua compra foi registrada com sucesso!\nEla está em análise e aguarda a aprovação de um funcionário."
+        )
+
+        # Limpa o carrinho e campos para nova compra
+        self.carrinho.clear()
+        self.lista_carrinho.delete(0, tk.END)
+        self.valor_total = 0.0
+        self.label_total.config(text="Total: R$ 0.00")
+        self.entry_time.delete(0, tk.END)
+        self.combo_pagamento.set('')
 
 
 if __name__ == "__main__":
