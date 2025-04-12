@@ -50,6 +50,18 @@ class EstoqueDAO:
         cursor.close()
         conn.close
 
+    @staticmethod
+    def atualizar_quantidade(id_produto, nova_quantidade):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        sql = "UPDATE estoque SET quantidade = %s WHERE id = %s"
+        cursor.execute(sql, (nova_quantidade, id_produto))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
     # PESQUISAR POR CATEGORIA
     @staticmethod
     def procura_categoria(categoria):
@@ -67,6 +79,35 @@ class EstoqueDAO:
         conn.close()
 
         return produto
+    
+    @staticmethod
+    def procura_nome(nome):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM estoque WHERE nome = %s", (nome,))
+        registro = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if registro:
+            return Estoque(id=registro[0], nome=registro[1], preco=registro[2], 
+                        quantidade=registro[3], categoria=registro[4])
+        return None
+    """def procura_nome(nome):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        sql = "SELECT * FROM estoque WHERE nome = %s"
+        cursor.execute(sql, (nome,))
+
+        registros = cursor.fetchall() # retorna todas as linhas do resultado
+
+        estoque = [Estoque(id=linha[0], nome=linha[1], preco=linha[2], quantidade=linha[3], categoria=linha[4]) for linha in registros]
+
+        cursor.close()
+        conn.close()
+
+        return estoque"""
     
     # REMOVER
     @staticmethod
@@ -87,7 +128,7 @@ class EstoqueDAO:
         conn  = Database.conectar()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM vw_produtos_disponiveis")
+        cursor.execute("SELECT * FROM estoque")
         registros = cursor.fetchall() # retorna todas as linhas do resultado
 
         array_estoque = [Estoque(id=linha[0], nome=linha[1], preco=linha[2], quantidade=linha[3], categoria=linha[4]) for linha in registros]

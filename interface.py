@@ -4,6 +4,7 @@ from tkinter import messagebox
 from dao.pessoa_dao import PessoaDAO
 from classes.pessoa import Pessoa
 from dao.estoque_dao import EstoqueDAO
+from dao.pedido_dao import PedidoDAO
 
 class AppLoja:
     def __init__(self, master):
@@ -57,7 +58,7 @@ class AppLoja:
                 messagebox.showinfo("Login", f"Bem-vindo funcionário {pessoa.nome}!")
             else:
                 messagebox.showinfo("Login", f"Bem-vindo, {pessoa.nome}!")
-                JanelaCliente(self.master)
+                JanelaCliente(self.master, cliente=pessoa)
         else:
             messagebox.showerror("Erro de Login", "E-mail ou senha incorretos, ou usuário não registrado.") 
 
@@ -97,10 +98,14 @@ class AppLoja:
         btn.grid(row=len(labels), column=0, columnspan=2, pady=10)
 
 class JanelaCliente(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, cliente=None):
         super().__init__(master)
         self.title("Produtos Disponíveis")
-        self.geometry("600x400")
+        self.geometry("800x600")
+        self.cliente = cliente
+
+        self.carrinho = []
+        self.valor_total = 0.0
 
         self.categorias = ["Todos", "Refrigerante", "Cerveja", "Agua Mineral", "Sucos"]
         self.combo_categoria = ttk.Combobox(self, values=self.categorias, state="readonly")
@@ -114,14 +119,39 @@ class JanelaCliente(tk.Toplevel):
         self.tree.heading("Preço", text="Preço")
         self.tree.heading("Quantidade", text="Qtd Estoque")
         self.tree.pack(expand=True, fill="both", padx=10, pady=10)
-
+        
         self.carregar_todos()
+
+        frame_compra = tk.Frame(self)
+        frame_compra.pack(pady=10)
+
+        tk.Label(frame_compra, text="Quantidade: ").grid(row=0, column=0)
+        self.entry_qtd = tk.Entry(frame_compra, width=5)
+        self.entry_qtd.grid(row=0, column=1)
+
+        tk.Button(frame_compra, text="Adicionar ao carrinho", command=self.adicionar_ao_carrinho).grid(row=0, column=2, padx=5)
+
+        self.lista_carrinho = tk.Listbox(self, width=100)
+        self.lista_carrinho.pack(padx=10, pady=5)
+
+        self.label_total = tk.Label(self, text="Total: R$ 0.00", font=("Arial", 14))
+        self.label_total.pack(pady=5)
+
+        tk.Label(self, text="Seu time:").pack()
+        self.entry_time = tk.Entry(self)
+        self.entry_time.pack()
+
+        tk.Label(self, text="Forma de Pagamento:").pack()
+        self.combo_pagamento = ttk.Combobox(self, values=["pix", "boleto", "cartao"], state="readonly")
+        self.combo_pagamento.pack()
+
+        tk.Button(self, text="Finalizar Compra", command=self.finalizar_compra).pack(pady=10)
 
     def carregar_todos(self):
         self.tree.delete(*self.tree.get_children())
         produtos = EstoqueDAO.lista_tudo()
         for produto in produtos:
-            self.tree.insert("", tk.END, values=(produto.nome, produto.preco, produto.quantidade))
+            self.tree.insert("", tk.END, values=(produto.nome, float(produto.preco), produto.quantidade))
 
     def filtrar_categoria(self, event):
         categoria = self.combo_categoria.get()
@@ -133,7 +163,63 @@ class JanelaCliente(tk.Toplevel):
             produtos = EstoqueDAO.procura_categoria(categoria)
 
         for produto in produtos:
-            self.tree.insert("", tk.END, values=(produto.nome, produto.preco, produto.quantidade))
+            self.tree.insert("", tk.END, values=(produto.nome, float(produto.preco), produto.quantidade))
+
+    def adicionar_ao_carrinho(self):
+        item = self.tree.focus()
+        if not item:
+            messagebox.showwarning("Selecione um produto", "Escolha um produto.")
+            return
+        
+        try:
+            qtd = int(self.entry_qtd.get())
+            if qtd <= 0:
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("Erro", "Informe uma quantidade válida!")
+            return
+        
+        nome, preco, estoque = self.tree.item(item)["values"]
+        if qtd > int(estoque):
+            messagebox.showerror("Erro", "Quantidade maior que o estoque.")
+            return
+        
+        produto = EstoqueDAO.procura_nome(nome)
+        if not produto:
+            messagebox.showerror("Erro", "Produto não encontrado.")
+            return
+        
+        subtotal = float(produto.preco) * qtd
+        self.carrinho.append((produto, qtd, float(produto.preco)))
+        self.lista_carrinho.insert(tk.END, f"{produto.nome} - {qtd} un - R$ {subtotal:.2f}")
+        self.valor_total +=subtotal
+        self.label_total.config(text=f"Total: R$ {self.valor_total:.2f}")
+
+    def finalizar_compra(self):
+        if not self.carrinho:
+            messagebox.showwarning("Carrinho vazio", "Adicione produtos ao carrinho.")
+            return
+            
+        time = self.entry_time.get().lower()
+        forma_pagamento = self.combo_pagamento.get()
+
+        if not forma_pagamento:
+            messagebox.showerror("Erro", "Escolha uma forma de pagamento.")
+            return
+            
+        if time == "Flamengo":
+            self.valor_total *= 1.05
+        elif time == "Fluminense":
+            self.valor_total *= 0.90
+
+        id_pagamento = PedidoDAO.get_id_pagamento(forma_pagamento)
+
+        id_venda = PedidoDAO.criar_venda(self.cliente.id, id_pagamento, self.valor_total)
+
+        for produto, qtd, preco in self.carrinho:
+            PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco)
+            EstoqueDAO.atualizar_quantidade(produto.id, produto.quantidade - qtd)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
