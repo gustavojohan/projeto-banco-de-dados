@@ -156,6 +156,24 @@ class JanelaCliente(tk.Toplevel):
         self.combo_categoria.pack(pady=10)
         self.combo_categoria.bind("<<ComboboxSelected>>", self.filtrar_categoria)
 
+        # Filtros
+        frame_filtros = tk.Frame(self)
+        frame_filtros.pack(pady=5)
+
+        tk.Label(frame_filtros, text="Nome:").grid(row=0, column=0)
+        self.entry_nome = tk.Entry(frame_filtros, width=20)
+        self.entry_nome.grid(row=0, column=1, padx=5)
+
+        tk.Label(frame_filtros, text="Preço Mín:").grid(row=0, column=2)
+        self.entry_preco_min = tk.Entry(frame_filtros, width=7)
+        self.entry_preco_min.grid(row=0, column=3, padx=5)
+
+        tk.Label(frame_filtros, text="Preço Máx:").grid(row=0, column=4)
+        self.entry_preco_max = tk.Entry(frame_filtros, width=7)
+        self.entry_preco_max.grid(row=0, column=5, padx=5)
+
+        tk.Button(frame_filtros, text="Aplicar Filtros", command=self.aplicar_filtros).grid(row=0, column=6, padx=5)
+
         # Tabela de produtos
         self.tree = ttk.Treeview(self, columns=("Nome", "Preço", "Quantidade"), show='headings')
         self.tree.heading("Nome", text="Nome")
@@ -283,6 +301,21 @@ class JanelaCliente(tk.Toplevel):
         self.label_total.config(text="Total: R$ 0.00")
         self.entry_time.delete(0, tk.END)
         self.combo_pagamento.set('')
+
+    def aplicar_filtros(self):
+        nome = self.entry_nome.get().strip()
+        try:
+            preco_min = float(self.entry_preco_min.get()) if self.entry_preco_min.get() else None
+            preco_max = float(self.entry_preco_max.get()) if self.entry_preco_max.get() else None
+        except ValueError:
+            messagebox.showerror("Erro", "Informe valores numéricos válidos para os preços.")
+            return
+
+        produtos = EstoqueDAO.filtrar(nome, preco_min, preco_max, self.combo_categoria.get())
+        
+        self.tree.delete(*self.tree.get_children())
+        for produto in produtos:
+            self.tree.insert("", tk.END, values=(produto.nome, float(produto.preco), produto.quantidade))
 
 
 if __name__ == "__main__":

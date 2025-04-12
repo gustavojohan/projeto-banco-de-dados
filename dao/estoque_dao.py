@@ -157,3 +157,39 @@ class EstoqueDAO:
         conn.close()
 
         return produto
+    
+    @staticmethod
+    def filtrar(nome, preco_min, preco_max, categoria):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        sql = "SELECT * FROM estoque WHERE 1=1"
+        params = []
+
+        if nome:
+            sql += " AND nome LIKE %s"
+            params.append(f"%{nome}%")
+
+        if categoria != "Todos":
+            sql += " AND categoria = %s"
+            params.append(categoria)
+
+        if preco_min is not None:
+            sql += " AND preco >= %s"
+            params.append(preco_min)
+
+        if preco_max is not None:
+            sql += " AND preco <= %s"
+            params.append(preco_max)
+
+        cursor.execute(sql, params)
+        linhas = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        produtos = []
+        for linha in linhas:
+            produto = Estoque(*linha)
+            produtos.append(produto)
+
+        return produtos
