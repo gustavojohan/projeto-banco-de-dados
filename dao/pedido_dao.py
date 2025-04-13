@@ -57,3 +57,34 @@ class PedidoDAO:
         cursor.close()
         conn.close()
         return resultado
+    
+    @staticmethod
+    def listar_pedidos_em_analise():
+        conn = Database.conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        sql = """
+            SELECT v.id, p.nome AS cliente, v.valor_total, v.data_solicitacao
+            FROM vendas v
+            JOIN pessoas p ON v.id_cliente = p.id
+            WHERE v.status = 'solicitado'
+        """
+        cursor.execute(sql)
+        pedidos = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return pedidos
+    
+    @staticmethod
+    def atualizar_status_pedido(id_venda, novo_status):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        sql = "UPDATE vendas SET status = %s WHERE id = %s"
+        cursor.execute(sql, (novo_status, id_venda))
+        conn.commit()
+
+        cursor.close()
+        conn.close()

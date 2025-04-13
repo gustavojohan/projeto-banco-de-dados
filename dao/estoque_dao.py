@@ -193,3 +193,17 @@ class EstoqueDAO:
             produtos.append(produto)
 
         return produtos
+    
+    @staticmethod
+    def listar_estoque_baixo():
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT nome, preco, quantidade FROM estoque WHERE quantidade <= 5")
+        resultados = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return resultados
+    

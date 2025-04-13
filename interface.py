@@ -56,6 +56,7 @@ class AppLoja:
                 messagebox.showinfo("Login", f"Bem-vindo administrador {pessoa.nome}!")
             elif pessoa.tipo == "funcionario":
                 messagebox.showinfo("Login", f"Bem-vindo funcionário {pessoa.nome}!")
+                JanelaMenuFuncionario(self.master, funcionario=pessoa)
             else:
                 messagebox.showinfo("Login", f"Bem-vindo, {pessoa.nome}!")
                 JanelaMenuCliente(self.master, cliente=pessoa)
@@ -106,14 +107,14 @@ class JanelaMenuCliente(tk.Toplevel):
 
         tk.Label(self, text=f"Olá, {cliente.nome}!", font=("Arial", 16)).pack(pady=20)
 
-        btn_comprar = tk.Button(self, text="Fazer Compras", width=25, command=self.ir_para_compras)
-        btn_comprar.pack(pady=10)
+        botao_comprar = tk.Button(self, text="Fazer Compras", width=25, command=self.ir_para_compras)
+        botao_comprar.pack(pady=10)
 
-        btn_historico = tk.Button(self, text="Histórico de Compras", width=25, command=self.mostrar_historico)
-        btn_historico.pack(pady=10)
+        botao_historico = tk.Button(self, text="Histórico de Compras", width=25, command=self.mostrar_historico)
+        botao_historico.pack(pady=10)
 
-        btn_dados = tk.Button(self, text="Exibir Dados Pessoais", width=25, command=self.exibir_dados)
-        btn_dados.pack(pady=10)
+        botao_dados = tk.Button(self, text="Exibir Dados Pessoais", width=25, command=self.exibir_dados)
+        botao_dados.pack(pady=10)
 
     def ir_para_compras(self):
         self.destroy()
@@ -144,7 +145,7 @@ class JanelaCliente(tk.Toplevel):
     def __init__(self, master=None, cliente=None):
         super().__init__(master)
         self.title("Produtos Disponíveis")
-        self.geometry("800x600")
+        self.geometry("900x800")
         self.cliente = cliente
 
         self.carrinho = []
@@ -269,32 +270,46 @@ class JanelaCliente(tk.Toplevel):
             return
         
         desconto_porcentagem = 0.0
+        valor_original = self.valor_total
             
         if time == "flamengo":
             desconto_porcentagem = -0.05
-            messagebox.showinfo("Atenção", "Por torcer para o Flamengo, houve um acréscimo de 5% no valor total da sua compra.")
+            valor_final = valor_original * 1.05
+            messagebox.showinfo(
+                "Atenção",
+                f"Por torcer para o Flamengo, houve um acréscimo de 5% no valor total da sua compra."
+                f"Valor original: R$ {valor_original:.2f}\n"
+                f"Valor com acréscimo: R$ {valor_final:.2f}"
+            )
         elif time == "fluminense":
             desconto_porcentagem = 0.10
-            messagebox.showinfo("Desconto Aplicado", "Parabéns! Por torcer para o Fluminense, você recebeu um desconto de 10% na sua compra.")
+            valor_final = valor_original * 0.90
+            messagebox.showinfo(
+                "Desconto Aplicado",
+                f"Parabéns! Por torcer para o Fluminense, você recebeu um desconto de 10% na sua compra."
+                f"Valor original: R$ {valor_original:.2f}\n"
+                f"Valor com desconto: R$ {valor_final:.2f}"
+            )
+        else:
+            valor_final = valor_original
 
-        self.valor_total *= (1 - desconto_porcentagem)
+        self.valor_total = valor_final
 
         id_pagamento = PedidoDAO.get_id_pagamento(forma_pagamento)
-
         id_venda = PedidoDAO.criar_venda(self.cliente.id, id_pagamento, self.valor_total)
 
         for produto, qtd, preco in self.carrinho:
             desconto_unitario = preco * desconto_porcentagem
             preco_unitario_com_desconto = preco - desconto_unitario
-            PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco, desconto_unitario)
+            PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco_unitario_com_desconto, desconto_unitario)
             EstoqueDAO.atualizar_quantidade(produto.id, produto.quantidade - qtd)
 
         messagebox.showinfo(
             "Compra Realizada",
-            "Sua compra foi registrada com sucesso!\nEla está em análise e aguarda a aprovação de um funcionário."
+            "Sua compra foi registrada com sucesso!\nEla está em análise e aguarda a aprovação."
         )
 
-        # Limpa o carrinho e campos para nova compra
+        # Limpa o carrinho ao finalizar a compra
         self.carrinho.clear()
         self.lista_carrinho.delete(0, tk.END)
         self.valor_total = 0.0
@@ -317,6 +332,92 @@ class JanelaCliente(tk.Toplevel):
         for produto in produtos:
             self.tree.insert("", tk.END, values=(produto.nome, float(produto.preco), produto.quantidade))
 
+class JanelaMenuFuncionario(tk.Toplevel):
+    def __init__(self, master=None, funcionario=None):
+        super().__init__(master)
+        self.title("Menu do Funcionário")
+        self.geometry("400x300")
+        self.funcionario = funcionario
+
+        tk.Label(self, text=f"Olá, {funcionario.nome}!", font=("Arial", 16)).pack(pady=20)
+
+        botao_analise_pedidos = tk.Button(self, text="Análise de Pedidos", width=25, command=self.ir_para_analise)
+        botao_analise_pedidos.pack(pady=10)
+
+        botao_baixo_estoque = tk.Button(self, text="Verificar Estoque", width=25, command=self.mostra_estoque)
+        botao_baixo_estoque.pack(pady=10)
+
+        """botao_adicionar_produtos = tk.Button(self, text="Adicionar Produtos ao Estoque", width=25, command=self.adiciona_estoque)
+        botao_adicionar_produtos.pack(pady=10)"""
+
+    def ir_para_analise(self):
+        #self.destroy()
+        JanelaAnalisePedidos(self)
+
+    def mostra_estoque(self):
+        estoque_baixo = EstoqueDAO.listar_estoque_baixo()
+
+        janela = tk.Toplevel(self)
+        janela.title("Produtos com Estoque Baixo")
+        janela.geometry("700x300")
+
+        tree = ttk.Treeview(janela, columns=("Nome", "Preço", "Quantidade"), show='headings')
+        tree.heading("Nome", text="Nome")
+        tree.heading("Preço", text="Preço")
+        tree.heading("Quantidade", text="Quantidade em Estoque")
+
+        tree.pack(expand=True, fill="both", padx=10, pady=10)
+
+        for nome, preco, quantidade in estoque_baixo:
+            tree.insert("", tk.END, values=(nome, float(preco), quantidade))
+
+        if not estoque_baixo:
+            tk.Label(janela, text="Nenhum produto em baixo estoque.").pack(pady=10)
+
+
+class JanelaAnalisePedidos(tk.Toplevel):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.title("Análise de Pedidos")
+        self.geometry("700x400")
+
+        self.tree = ttk.Treeview(self, columns=("ID", "Cliente", "Total", "Data"), show='headings')
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Cliente", text="Cliente")
+        self.tree.heading("Total", text="Total")
+        self.tree.heading("Data", text="Data")
+        self.tree.pack(expand=True, fill="both", padx=10, pady=10)
+
+        frame_btns = tk.Frame(self)
+        frame_btns.pack(pady=10)
+
+        tk.Button(frame_btns, text="Concluir Pedido", command=self.concluir).pack(side=tk.LEFT, padx=10)
+        tk.Button(frame_btns, text="Reprovar Pedido", command=self.reprovar).pack(side=tk.LEFT, padx=10)
+
+        self.carregar_pedidos()
+
+    def carregar_pedidos(self):
+        self.tree.delete(*self.tree.get_children())
+        pedidos = PedidoDAO.listar_pedidos_em_analise()
+        for pedido in pedidos:
+            self.tree.insert("", tk.END, values=(pedido['id'], pedido['cliente'], pedido['valor_total'], pedido['data_solicitacao']))
+
+    def concluir(self):
+        self._atualizar_status('concluido')
+
+    def reprovar(self):
+        self._atualizar_status('cancelado')
+
+    def _atualizar_status(self, status):
+        item = self.tree.focus()
+        if not item:
+            messagebox.showwarning("Atenção", "Selecione um pedido.")
+            return
+
+        id_venda = self.tree.item(item)["values"][0]
+        PedidoDAO.atualizar_status_pedido(id_venda, status)
+        messagebox.showinfo("Sucesso", f"Pedido {status} com sucesso!")
+        self.carregar_pedidos()
 
 if __name__ == "__main__":
     root = tk.Tk()
