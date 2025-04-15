@@ -78,12 +78,12 @@ class PedidoDAO:
         return pedidos
     
     @staticmethod
-    def atualizar_status_pedido(id_venda, novo_status):
+    def atualizar_status_pedido(id_venda, novo_status, id_funcionario):
         conn = Database.conectar()
         cursor = conn.cursor()
 
-        sql = "UPDATE vendas SET status = %s WHERE id = %s"
-        cursor.execute(sql, (novo_status, id_venda))
+        sql = "UPDATE vendas SET status = %s, id_funcionario = %s, data_processamento = NOW() WHERE id = %s"
+        cursor.execute(sql, (novo_status, id_funcionario, id_venda))
         conn.commit()
 
         cursor.close()

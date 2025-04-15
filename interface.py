@@ -352,7 +352,7 @@ class JanelaMenuFuncionario(tk.Toplevel):
         botao_cadastro_produtos.pack(pady=10)
 
     def ir_para_analise(self):
-        JanelaAnalisePedidos(self)
+        JanelaAnalisePedidos(self, funcionario=self.funcionario)
 
     # MOSTRA A LISTA DE PRODUTOS COM 5 OU MENOS UNIDADES
     def mostra_estoque(self):
@@ -522,10 +522,11 @@ class JanelaReabastecimentoEstoque(tk.Toplevel):
         self.carregar_todos()
 
 class JanelaAnalisePedidos(tk.Toplevel):
-    def __init__(self, master=None):
+    def __init__(self, master=None, funcionario=None):
         super().__init__(master)
         self.title("Análise de Pedidos")
         self.geometry("700x400")
+        self.funcionario = funcionario
 
         self.tree = ttk.Treeview(self, columns=("ID", "Cliente", "Total", "Data"), show='headings')
         self.tree.heading("ID", text="ID")
@@ -561,7 +562,7 @@ class JanelaAnalisePedidos(tk.Toplevel):
             return
 
         id_venda = self.tree.item(item)["values"][0]
-        PedidoDAO.atualizar_status_pedido(id_venda, status)
+        PedidoDAO.atualizar_status_pedido(id_venda, status, self.funcionario.id)
         messagebox.showinfo("Sucesso", f"Pedido {status} com sucesso!")
         self.carregar_pedidos()
 
