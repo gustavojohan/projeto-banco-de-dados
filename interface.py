@@ -2,9 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from dao.pessoa_dao import PessoaDAO
-from classes.pessoa import Pessoa
 from dao.estoque_dao import EstoqueDAO
 from dao.pedido_dao import PedidoDAO
+from classes.pessoa import Pessoa
+from classes.estoque import Estoque
 
 class AppLoja:
     def __init__(self, master):
@@ -219,10 +220,7 @@ class JanelaCliente(tk.Toplevel):
         categoria = self.combo_categoria.get()
         self.tree.delete(*self.tree.get_children())
 
-        if categoria == "Todos":
-            produtos = EstoqueDAO.lista_tudo()
-        else:
-            produtos = EstoqueDAO.procura_categoria(categoria)
+        produtos = EstoqueDAO.procura_categoria(categoria)
 
         for produto in produtos:
             self.tree.insert("", tk.END, values=(produto.nome, float(produto.preco), produto.quantidade))
@@ -347,13 +345,16 @@ class JanelaMenuFuncionario(tk.Toplevel):
         botao_baixo_estoque = tk.Button(self, text="Verificar Estoque", width=25, command=self.mostra_estoque)
         botao_baixo_estoque.pack(pady=10)
 
-        """botao_adicionar_produtos = tk.Button(self, text="Adicionar Produtos ao Estoque", width=25, command=self.adiciona_estoque)
-        botao_adicionar_produtos.pack(pady=10)"""
+        botao_adicionar_produtos = tk.Button(self, text="Adicionar Produtos ao Estoque", width=25, command=self.ir_para_adiciona_estoque)
+        botao_adicionar_produtos.pack(pady=10)
+
+        botao_cadastro_produtos = tk.Button(self, text="Cadastrar Produtos no Estoque", width=25, command=self.cadastro_produtos)
+        botao_cadastro_produtos.pack(pady=10)
 
     def ir_para_analise(self):
-        #self.destroy()
         JanelaAnalisePedidos(self)
 
+    # MOSTRA A LISTA DE PRODUTOS COM 5 OU MENOS UNIDADES
     def mostra_estoque(self):
         estoque_baixo = EstoqueDAO.listar_estoque_baixo()
 
@@ -373,7 +374,152 @@ class JanelaMenuFuncionario(tk.Toplevel):
 
         if not estoque_baixo:
             tk.Label(janela, text="Nenhum produto em baixo estoque.").pack(pady=10)
+    
+    def ir_para_adiciona_estoque(self):
+        self.destroy()
+        JanelaReabastecimentoEstoque(self.master)
+        
+    def cadastro_produtos(self):
+        janela = tk.Toplevel(self)
+        janela.title("Cadastrar Novo Produto")
+        janela.geometry("400x350")
 
+        tk.Label(janela, text="Nome:").pack(pady=5)
+        entry_nome = tk.Entry(janela)
+        entry_nome.pack(pady=5)
+
+        tk.Label(janela, text="Preço:").pack(pady=5)
+        entry_preco = tk.Entry(janela)
+        entry_preco.pack(pady=5)
+
+        tk.Label(janela, text="Quantidade Inicial:").pack(pady=5)
+        entry_quantidade = tk.Entry(janela)
+        entry_quantidade.pack(pady=5)
+
+        tk.Label(janela, text="Categoria:").pack(pady=5)
+        entry_categoria = tk.Entry(janela)
+        entry_categoria.pack(pady=5)
+
+        def cadastrar():
+            nome = entry_nome.get()
+            try:
+                preco = float(entry_preco.get())
+                quantidade = int(entry_quantidade.get())
+            except ValueError:
+                messagebox.showerror("Erro", "Preço e quantidade devem ser numéricos.")
+                return
+            categoria = entry_categoria.get()
+
+            if not nome or preco < 0 or quantidade < 0 or not categoria:
+                messagebox.showwarning("Erro", "Preencha todos os campos corretamente.")
+                return
+
+            produto = Estoque(nome=nome, preco=preco, quantidade=quantidade, categoria=categoria)
+            EstoqueDAO.criar(produto)
+            messagebox.showinfo("Sucesso", f"Produto '{nome}' cadastrado com sucesso!")
+            janela.destroy()
+
+        tk.Button(janela, text="Cadastrar Produto", command=cadastrar).pack(pady=15)
+
+class JanelaReabastecimentoEstoque(tk.Toplevel):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.title("Reabastecimento de Estoque")
+        self.geometry("900x800")
+
+        self.categorias = EstoqueDAO.lista_categorias()
+        self.combo_categoria = ttk.Combobox(self, values=self.categorias, state="readonly")
+        self.combo_categoria.set("Todos")
+        self.combo_categoria.pack(pady=10)
+        self.combo_categoria.bind("<<ComboboxSelected>>", self.filtrar_categoria)
+
+        # Filtros
+        frame_filtros = tk.Frame(self)
+        frame_filtros.pack(pady=5)
+
+        tk.Label(frame_filtros, text="Nome:").grid(row=0, column=0)
+        self.entry_nome = tk.Entry(frame_filtros, width=20)
+        self.entry_nome.grid(row=0, column=1, padx=5)
+
+        tk.Label(frame_filtros, text="Preço Mín:").grid(row=0, column=2)
+        self.entry_preco_min = tk.Entry(frame_filtros, width=7)
+        self.entry_preco_min.grid(row=0, column=3, padx=5)
+
+        tk.Label(frame_filtros, text="Preço Máx:").grid(row=0, column=4)
+        self.entry_preco_max = tk.Entry(frame_filtros, width=7)
+        self.entry_preco_max.grid(row=0, column=5, padx=5)
+
+        tk.Button(frame_filtros, text="Aplicar Filtros", command=self.aplicar_filtros).grid(row=0, column=6, padx=5)
+
+        # Tabela de produtos
+        self.tree = ttk.Treeview(self, columns=("ID", "Nome", "Preço", "Quantidade"), show='headings')
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Nome", text="Nome")
+        self.tree.heading("Preço", text="Preço")
+        self.tree.heading("Quantidade", text="Qtd Estoque")
+        self.tree.pack(expand=True, fill="both", padx=10, pady=10)
+
+        frame_add_estoque = tk.Frame(self)
+        frame_add_estoque.pack(pady=10)
+
+        tk.Label(frame_add_estoque, text="Quantidade: ").grid(row=0, column=0)
+        self.entry_qtd = tk.Entry(frame_add_estoque, width=5)
+        self.entry_qtd.grid(row=0, column=1)
+
+        tk.Button(frame_add_estoque, text="Reabastecer estoque", command=self.reabastece_estoque).grid(row=0, column=2, padx=10)
+
+        self.carregar_todos()
+
+    def filtrar_categoria(self, event):
+        categoria = self.combo_categoria.get()
+        self.tree.delete(*self.tree.get_children())
+
+        produtos = EstoqueDAO.procura_categoria(categoria)
+
+        for produto in produtos:
+            self.tree.insert("", tk.END, values=(produto.id, produto.nome, float(produto.preco), produto.quantidade))
+
+    def carregar_todos(self):
+        self.tree.delete(*self.tree.get_children())
+        produtos = EstoqueDAO.lista_tudo()
+        for produto in produtos:
+            self.tree.insert("", tk.END, values=(produto.id, produto.nome, float(produto.preco), produto.quantidade))
+        
+    def aplicar_filtros(self):
+        nome = self.entry_nome.get().strip()
+        try:
+            preco_min = float(self.entry_preco_min.get()) if self.entry_preco_min.get() else None
+            preco_max = float(self.entry_preco_max.get()) if self.entry_preco_max.get() else None
+        except ValueError:
+            messagebox.showerror("Erro", "Informe valores numéricos válidos para os preços.")
+            return
+
+        produtos = EstoqueDAO.filtrar(nome, preco_min, preco_max, self.combo_categoria.get())
+            
+        self.tree.delete(*self.tree.get_children())
+        for produto in produtos:
+            self.tree.insert("", tk.END, values=(produto.id, produto.nome, float(produto.preco), produto.quantidade))
+
+    def reabastece_estoque(self):
+        item = self.tree.focus()
+        if not item:
+            messagebox.showwarning("Atenção", "Selecione um produto.")
+            return
+        
+        qtd_str = self.entry_qtd.get()
+
+        if not qtd_str.isdigit():
+            messagebox.showwarning("Erro", "Digite uma quantidade válida.")
+            return
+        
+        valores = self.tree.item(item)["values"]
+        id_produto = valores[0]
+        qtd_atual = valores[3]
+        nova_qtd = qtd_atual + int(qtd_str)
+
+        EstoqueDAO.atualizar_quantidade(id_produto, nova_qtd)
+        messagebox.showinfo("Sucesso", f"Produto reabastecido! Nova quantidade: {nova_qtd}")
+        self.carregar_todos()
 
 class JanelaAnalisePedidos(tk.Toplevel):
     def __init__(self, master=None):

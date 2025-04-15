@@ -93,21 +93,6 @@ class EstoqueDAO:
             return Estoque(id=registro[0], nome=registro[1], preco=registro[2], 
                         quantidade=registro[3], categoria=registro[4])
         return None
-    """def procura_nome(nome):
-        conn = Database.conectar()
-        cursor = conn.cursor()
-
-        sql = "SELECT * FROM estoque WHERE nome = %s"
-        cursor.execute(sql, (nome,))
-
-        registros = cursor.fetchall() # retorna todas as linhas do resultado
-
-        estoque = [Estoque(id=linha[0], nome=linha[1], preco=linha[2], quantidade=linha[3], categoria=linha[4]) for linha in registros]
-
-        cursor.close()
-        conn.close()
-
-        return estoque"""
     
     # REMOVER
     @staticmethod
@@ -206,4 +191,17 @@ class EstoqueDAO:
         conn.close()
 
         return resultados
+    
+    @staticmethod
+    def lista_categorias():
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT DISTINCT categoria FROM estoque WHERE categoria IS NOT NULL")
+        categorias = [linha[0] for linha in cursor.fetchall()]
+
+        conn.close()
+        cursor.close()
+
+        return categorias
     
