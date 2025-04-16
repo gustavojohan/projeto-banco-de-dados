@@ -88,3 +88,16 @@ class PedidoDAO:
 
         cursor.close()
         conn.close()
+    
+    @staticmethod
+    def buscar_detalhes_vendas():
+        conn = Database.conectar()
+        cursor = conn.cursor(dictionary=True)
+
+        sql = "SELECT * FROM vw_detalhes_vendas_funcionario"
+        cursor.execute(sql)
+        tabela_vendas = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+        return tabela_vendas

@@ -55,6 +55,7 @@ class AppLoja:
         if pessoa:
             if pessoa.tipo == "admin":
                 messagebox.showinfo("Login", f"Bem-vindo administrador {pessoa.nome}!")
+                JanelaMenuAdmin(self.master, admin=pessoa)
             elif pessoa.tipo == "funcionario":
                 messagebox.showinfo("Login", f"Bem-vindo funcionário {pessoa.nome}!")
                 JanelaMenuFuncionario(self.master, funcionario=pessoa)
@@ -565,6 +566,65 @@ class JanelaAnalisePedidos(tk.Toplevel):
         PedidoDAO.atualizar_status_pedido(id_venda, status, self.funcionario.id)
         messagebox.showinfo("Sucesso", f"Pedido {status} com sucesso!")
         self.carregar_pedidos()
+
+class JanelaMenuAdmin(tk.Toplevel):
+    def __init__(self, master=None, admin=None):
+        super().__init__(master)
+        self.title("Menu Administração")
+        self.geometry("400x300")
+        self.admin = admin
+
+        tk.Label(self, text=f"Olá, {admin.nome}!", font=("Arial", 16)).pack(pady=20)
+
+        botao_relatorio = tk.Button(self, text="Exibir Relatório de Vendas", width=25, command=self.ir_para_relatorio)
+        botao_relatorio.pack(pady=10)
+
+    def ir_para_relatorio(self):
+        JanelaRelatorioVendas(self.master, admin=self.admin)
+
+class JanelaRelatorioVendas(tk.Toplevel):
+    def __init__(self, master=None, admin=None):
+        super().__init__(master)
+        self.title("Relatório de Vendas")
+        self.geometry("1100x600")
+        self.admin = admin
+
+        frame_tabela = tk.Frame(self)
+        frame_tabela.pack(expand=True, fill="both", padx=10, pady=10)
+
+        scrollbar_vertical = tk.Scrollbar(frame_tabela, orient="vertical")
+        scrollbar_vertical.pack(side="right", fill="y")
+
+        scrollbar_horizontal = tk.Scrollbar(frame_tabela, orient="horizontal")
+        scrollbar_horizontal.pack(side="bottom", fill='x')
+
+        self.tree = ttk.Treeview(frame_tabela, columns=(
+            "ID Venda", "Data Solicit.", "Data Proc.", "Status", "Valor Total",
+            "Funcionario", "Cliente",
+            "Produto", "Qtd", "Preço Unit.", "Desconto Unitário", "Subtotal"
+        ), show='headings', yscrollcommand=scrollbar_vertical.set, xscrollcommand=scrollbar_horizontal.set)
+
+        scrollbar_vertical.config(command=self.tree.yview)
+        scrollbar_horizontal.config(command=self.tree.xview)
+
+        for col in self.tree["columns"]:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor="center")
+
+        self.tree.pack(expand=True, fill="both", padx=10, pady=10)
+
+        self.carregar_dados()
+
+    def carregar_dados(self):
+        vendas = PedidoDAO.buscar_detalhes_vendas()
+
+        for venda in vendas:
+            self.tree.insert("", tk.END, values=(
+                venda["id_venda"], venda["data_solicitacao"], venda["data_processamento"],
+                venda["status"], venda["valor_total"], venda["nome_funcionario"],
+                venda["nome_cliente"], venda["nome_produto"], venda["qtd_produto"],
+                venda["preco_unitario"], venda["desconto"], venda["subtotal_com_desconto"]
+            ))
 
 if __name__ == "__main__":
     root = tk.Tk()

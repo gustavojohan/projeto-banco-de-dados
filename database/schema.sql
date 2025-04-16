@@ -60,3 +60,31 @@ CREATE TABLE IF NOT EXISTS detalhe_vendas (
 CREATE OR REPLACE VIEW vw_produtos_disponiveis AS
 SELECT id, nome, preco, quantidade, categoria
 FROM estoque;
+
+CREATE OR REPLACE VIEW vw_detalhes_vendas_funcionario AS
+SELECT
+    v.id AS id_venda,
+    v.data_solicitacao,
+    v.data_processamento,
+    v.status,
+    v.valor_total,
+
+    f.id AS id_funcionario,
+    f.nome AS nome_funcionario,
+
+    c.id AS id_cliente,
+    c.nome AS nome_cliente,
+
+    p.id AS id_produto,
+    p.nome AS nome_produto,
+    dv.qtd_produto,
+    dv.preco_unitario,
+    dv.desconto,
+
+    dv.qtd_produto * (dv.preco_unitario - dv.desconto) AS subtotal_com_desconto
+
+FROM vendas v
+JOIN pessoas f ON v.id_funcionario = f.id AND f.tipo = 'funcionario'
+JOIN pessoas c ON v.id_cliente = c.id AND c.tipo = 'cliente'
+JOIN detalhe_vendas dv ON dv.id_venda = v.id
+JOIN estoque p ON p.id = dv.id_produto;
