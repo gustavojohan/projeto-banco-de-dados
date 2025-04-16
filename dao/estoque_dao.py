@@ -94,6 +94,17 @@ class EstoqueDAO:
                         quantidade=registro[3], categoria=registro[4])
         return None
     
+    @staticmethod
+    def procura_id(produto_id):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nome, preco, quantidade FROM estoque WHERE id = %s", (produto_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return Estoque(*row)
+        return None
+    
     # REMOVER
     @staticmethod
     def remover_id(id):

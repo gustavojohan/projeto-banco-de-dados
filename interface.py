@@ -301,7 +301,7 @@ class JanelaCliente(tk.Toplevel):
             desconto_unitario = preco * desconto_porcentagem
             preco_unitario_com_desconto = preco - desconto_unitario
             PedidoDAO.adicionar_detalhe_venda(id_venda, produto.id, qtd, preco_unitario_com_desconto, desconto_unitario)
-            EstoqueDAO.atualizar_quantidade(produto.id, produto.quantidade - qtd)
+            
 
         messagebox.showinfo(
             "Compra Realizada",
@@ -564,7 +564,20 @@ class JanelaAnalisePedidos(tk.Toplevel):
 
         id_venda = self.tree.item(item)["values"][0]
         PedidoDAO.atualizar_status_pedido(id_venda, status, self.funcionario.id)
+
+        if status == 'concluido':
+            detalhes = PedidoDAO.get_detalhes_venda(id_venda)
+            for detalhe in detalhes:
+                id_produto = detalhe['id_produto']
+                quantidade = detalhe['qtd_produto']
+                produto = EstoqueDAO.procura_id(id_produto)
+
+                if produto:
+                    nova_qtd = produto.quantidade - quantidade
+                    EstoqueDAO.atualizar_quantidade(id_produto, nova_qtd)
+
         messagebox.showinfo("Sucesso", f"Pedido {status} com sucesso!")
+
         self.carregar_pedidos()
 
 class JanelaMenuAdmin(tk.Toplevel):

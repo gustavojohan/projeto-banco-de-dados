@@ -101,3 +101,16 @@ class PedidoDAO:
         cursor.close()
         conn.close()
         return tabela_vendas
+    
+    @staticmethod
+    def get_detalhes_venda(id_venda):
+        conn = Database.conectar()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id_produto, qtd_produto
+            FROM detalhe_vendas
+            WHERE id_venda = %s
+        """, (id_venda,))
+        resultados = cursor.fetchall()
+        conn.close()
+        return [{"id_produto": row[0], "qtd_produto": row[1]} for row in resultados]
