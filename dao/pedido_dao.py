@@ -114,3 +114,23 @@ class PedidoDAO:
         resultados = cursor.fetchall()
         conn.close()
         return [{"id_produto": row[0], "qtd_produto": row[1]} for row in resultados]
+    
+    @staticmethod
+    def calcular_faturamento():
+        conn = Database.conectar()
+        cursor = conn.cursor()
+
+        cursor.execute("CALL calcular_faturamento_total(@total)")
+        cursor.execute("SELECT @total")
+
+        resultado = cursor.fetchone()
+
+        if resultado:
+            faturamento_total = float(resultado[0])
+
+        cursor.close()
+        conn.close()
+
+        #print("Faturamento total (debug):", faturamento_total)
+
+        return faturamento_total if faturamento_total else 0.0

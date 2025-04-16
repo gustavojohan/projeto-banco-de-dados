@@ -628,6 +628,10 @@ class JanelaRelatorioVendas(tk.Toplevel):
 
         self.carregar_dados()
 
+        faturamento_total = PedidoDAO.calcular_faturamento()
+        label_faturamento = tk.Label(self, text=f"Faturamento Total: R$ {faturamento_total:.2f}", font=("Arial", 14, "bold"))
+        label_faturamento.pack(pady=(10,0))
+
     def carregar_dados(self):
         vendas = PedidoDAO.buscar_detalhes_vendas()
 

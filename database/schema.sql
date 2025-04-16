@@ -88,3 +88,15 @@ JOIN pessoas f ON v.id_funcionario = f.id AND f.tipo = 'funcionario'
 JOIN pessoas c ON v.id_cliente = c.id AND c.tipo = 'cliente'
 JOIN detalhe_vendas dv ON dv.id_venda = v.id
 JOIN estoque p ON p.id = dv.id_produto;
+
+DELIMITER $$
+
+CREATE PROCEDURE calcular_faturamento_total(OUT faturamento_total DECIMAL(10, 2))
+BEGIN
+    SELECT SUM(v.subtotal_com_desconto)
+    INTO faturamento_total
+    FROM vw_detalhes_vendas_funcionario v
+    WHERE v.status = 'concluido';
+END$$
+
+DELIMITER ;
